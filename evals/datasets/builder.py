@@ -3,8 +3,10 @@ from pathlib import Path
 
 import torchvision.transforms as transforms
 from hydra.utils import instantiate
+from loguru import logger
 from PIL import ImageFile
 from torch.utils.data import DataLoader, default_collate
+from torchvision.datasets import ImageFolder
 
 from .catalog import DatasetCatalog
 
@@ -96,3 +98,47 @@ def get_linearprobe_loaders(name, image_mean="imagenet"):
     valid_loader = DataLoader(valid_set, bs, num_workers=n_workers, drop_last=False)
     test_loader = DataLoader(test_set, bs, num_workers=n_workers, drop_last=False)
     return train_loader, valid_loader, test_loader
+
+
+def get_imagenet_loaders(image_mean="imagenet", image_size=224, small=False):
+    if image_mean == "clip":
+        mean = [0.48145466, 0.4578275, 0.40821073]
+        std = [0.26862954, 0.26130258, 0.27577711]
+    elif image_mean == "imagenet":
+        mean = [0.485, 0.456, 0.406]
+        std = [0.229, 0.224, 0.225]
+    else:
+        raise ValueError()
+
+    transform = transforms.Compose(
+        [
+            transforms.Resize(
+                image_size, interpolation=transforms.InterpolationMode.BICUBIC
+            ),
+            transforms.CenterCrop(image_size),
+            lambda x: x.convert("RGB"),
+            transforms.ToTensor(),
+            transforms.Normalize(mean=mean, std=std),
+        ]
+    )
+
+    n_workers = len(os.sched_getaffinity(0))
+
+    logger.info("Creating ImageNet train dataset")
+    # train_root = "/nfs/turbo/justincj-turbo/shared_datasets/imagenet/train"
+    train_root = "/tmpssd/mbanani/imagenet/train"
+    train_set = ImageFolder(train_root, transform=transform)
+    if small:
+        dset_size = len(train_set)
+        new_samples = [train_set.samples[i] for i in range(dset_size) if i % 10 == 0]
+        train_set.samples = new_samples
+
+    train_loader = DataLoader(train_set, 1024, num_workers=n_workers, drop_last=False)
+
+    # test sets
+    logger.info("Creating ImageNet valid dataset")
+    valid_root = "/nfs/turbo/justincj-turbo/shared_datasets/imagenet/val"
+    valid_set = ImageFolder(valid_root, transform=transform)
+    valid_loader = DataLoader(valid_set, 128, num_workers=n_workers, drop_last=False)
+
+    return train_loader, valid_loader

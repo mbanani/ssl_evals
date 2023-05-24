@@ -6,7 +6,7 @@ from omegaconf import DictConfig
 
 from evals.datasets.builder import get_linearprobe_loaders
 from evals.evaluation.fewshot import evaluate_fewshot
-from evals.evaluation.sgd_probe import evaluate_sgd_probe
+from evals.evaluation.linear_probe import evaluate_linear_probe
 from evals.evaluation.utils import extract_features, get_model
 
 
@@ -67,19 +67,7 @@ def main(cfg: DictConfig):
         logger.info(f"{dataset} | num classes: {num_classes}")
 
         if cfg.evaluations.linear_probe:
-            # lin_out[dataset] = evaluate_linear_probe(
-            #     train_feats,
-            #     train_labels,
-            #     valid_feats,
-            #     valid_labels,
-            #     test_feats,
-            #     test_labels,
-            #     use_mean_acc,
-            #     max_iter=cfg.logistic_regression.max_iter,
-            #     combine_trainval=cfg.logistic_regression.combine_trainval,
-            #     use_sklearn=cfg.logistic_regression.use_sklearn,
-            # )
-            lin_out[dataset] = evaluate_sgd_probe(
+            lin_out[dataset] = evaluate_linear_probe(
                 train_feats,
                 train_labels,
                 valid_feats,
@@ -87,7 +75,19 @@ def main(cfg: DictConfig):
                 test_feats,
                 test_labels,
                 use_mean_acc,
+                max_iter=cfg.logistic_regression.max_iter,
+                combine_trainval=cfg.logistic_regression.combine_trainval,
+                use_sklearn=cfg.logistic_regression.use_sklearn,
             )
+            # lin_out[dataset] = evaluate_sgd_probe(
+            #     train_feats,
+            #     train_labels,
+            #     valid_feats,
+            #     valid_labels,
+            #     test_feats,
+            #     test_labels,
+            #     use_mean_acc,
+            # )
             logger.info(f"Evaluated {dataset} ({i}/{num_sets}): {lin_out[dataset]:.2f}")
 
         if cfg.evaluations.fewshot and dataset != "pcam":

@@ -66,8 +66,8 @@ class LogisticRegression:
         np.random.seed(self.random_state)
 
         # initialize
-        # self.logreg = logreg_linear(feat_dim, num_classes)
-        self.logreg = logreg_mha(feat_dim, num_classes)
+        self.logreg = logreg_linear(feat_dim, num_classes)
+        # self.logreg = logreg_mha(feat_dim, num_classes)
 
         # move everything to CUDA .. otherwise why are we even doing this?!
         self.logreg = self.logreg.to(self.device)

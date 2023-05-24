@@ -8,6 +8,7 @@ evaluations:
   fewshot: True
 dataset:
   name: all
+  image_size: 224
   image_mean: imagenet
 logistic_regression:
   max_iter: 200 
